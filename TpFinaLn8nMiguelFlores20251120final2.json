@@ -1,0 +1,431 @@
+{
+  "name": "TpFinaLn8nMiguelFlores",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        64
+      ],
+      "id": "2ffc7704-cf69-431d-877a-293421970056",
+      "name": "Telegram Trigger",
+      "webhookId": "70bf27d4-1762-476d-aea3-5812a2a5ca3e",
+      "credentials": {
+        "telegramApi": {
+          "id": "txTOaJAf1jBg1Jgp",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c9c7b5df-efd1-47a6-a61e-829079c383d9",
+              "leftValue": "=={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "01226148-e866-486a-8b1f-e4ceb8e5b826",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        64
+      ],
+      "id": "48538090-65ea-42f8-8cbd-6e3d83462dc2",
+      "name": "If - mensaje Audio ?"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a087c7ff-7c01-4d06-9568-1170abce6bf0",
+      "name": "Get audio",
+      "webhookId": "a6d40cd3-d38a-430f-8968-b2b7f99bce15",
+      "credentials": {
+        "telegramApi": {
+          "id": "txTOaJAf1jBg1Jgp",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d52b55fb-41d9-41d3-a8f7-abaa357ab259",
+              "name": "texto",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        176
+      ],
+      "id": "aa0a0798-4e8f-461f-b797-5565a9838495",
+      "name": "Texto limpio"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-lite"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "248d4aaa-b851-48c8-a8fb-9e6f0504233e",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "w7HHvtdhghFR70fv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d52b55fb-41d9-41d3-a8f7-abaa357ab259",
+              "name": "texto",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "5356471b-e251-4255-9475-004f4fae06e6",
+      "name": "Texto limpio desde Audio"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.texto }}",
+        "options": {
+          "systemMessage": "Eres un asistente técnico especializado en sistemas de alarma de incendio INIM, incluyendo centrales, módulos, dispositivos, topologías de lazo, parametrización, normas IRAM y criterios de instalación.\n\nTu función es responder consultas utilizando exclusivamente la información contenida en el CONTEXTO proporcionado. No uses conocimientos externos, no completes lagunas y no infieras información no presente en el CONTEXTO.\n\nSi el CONTEXTO no contiene información suficiente, respondé estrictamente:\n\"No poseo información sobre eso en los documentos cargados.\"\n\nLas respuestas deben ser:\n- Técnicas, precisas y orientadas a resolución.\n- Redactadas en español técnico estándar.\n- Breves y estructuradas (máximo 12–14 líneas).\n- Adecuadas para ser enviadas por Telegram (sin bloques largos, sin formato complejo).\n- Sin repreguntas, sin ambigüedad y sin introducir temas no solicitados.\n\nRespondé siempre de forma cerrada, directa y finalizada en el primer intento.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        736,
+        128
+      ],
+      "id": "9db8669b-c0b0-4db5-858b-a6df58bcb604",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "contextWindowLength": 7
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        368
+      ],
+      "id": "42ff1170-9142-4c7a-b85f-d6df7d19579e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        128
+      ],
+      "id": "4b4f574b-8583-48df-8b23-ae9f714030f1",
+      "name": "Send a text message",
+      "webhookId": "da516aaf-34dc-4e19-89c4-3c49d6530ac2",
+      "credentials": {
+        "telegramApi": {
+          "id": "txTOaJAf1jBg1Jgp",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "embed-multilingual-v3.0"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsCohere",
+      "typeVersion": 1,
+      "position": [
+        928,
+        496
+      ],
+      "id": "2ddb1c5d-385e-4596-91d7-1494664923be",
+      "name": "Embeddings Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "sVoXOZsXL7039GBq",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "={{ $json.texto }}",
+        "tableName": {
+          "__rl": true,
+          "value": "auxiliar",
+          "mode": "list",
+          "cachedResultName": "auxiliar"
+        },
+        "topK": 7,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        928,
+        336
+      ],
+      "id": "1aaba56a-648a-4f7f-b061-c94528bdb2d8",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "oI6yrxmbtCbDdpaa",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatCohere",
+      "typeVersion": 1,
+      "position": [
+        544,
+        320
+      ],
+      "id": "860e7be9-0abe-4b2c-82cc-da0f6d90ec29",
+      "name": "Cohere Chat Model",
+      "credentials": {
+        "cohereApi": {
+          "id": "sVoXOZsXL7039GBq",
+          "name": "CohereApi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If - mensaje Audio ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - mensaje Audio ?": {
+      "main": [
+        [
+          {
+            "node": "Get audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Texto limpio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get audio": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Texto limpio desde Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto limpio": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto limpio desde Audio": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Cohere": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cohere Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a62c0dd3-43b0-4294-96d5-0fd02883f2ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0c7ff2a31c3fbd6e782428a1ceb39149178bade4226429348ff7be2a3386f9bf"
+  },
+  "id": "ICmwvsrNASnJwtjD",
+  "tags": []
+}
